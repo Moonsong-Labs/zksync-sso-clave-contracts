@@ -12,8 +12,8 @@ contract OidcKeyRegistry is UUPSUpgradeable, OwnableUpgradeable {
     // keccak256(iss) => index
     mapping(bytes32 => uint8) public keyIndexes;
 
-    function initialize(address owner) public initializer {
-        __Ownable_init(owner);
+    function initialize() public initializer {
+        __Ownable_init();
         __UUPSUpgradeable_init();
     }
 

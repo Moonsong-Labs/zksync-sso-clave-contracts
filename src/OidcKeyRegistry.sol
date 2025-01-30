@@ -21,15 +21,15 @@ contract OidcKeyRegistry is UUPSUpgradeable, OwnableUpgradeable {
         return keccak256(abi.encodePacked(iss));
     }
 
-    function setKey(bytes32 iss, bytes32 key) public onlyOwner {
-        uint8 index = keyIndexes[iss];
+    function setKey(bytes32 issHash, bytes32 key) public onlyOwner {
+        uint8 index = keyIndexes[issHash];
         uint8 nextIndex = (index + 1) % MAX_KEYS;
-        OIDCKeys[iss][nextIndex] = key;
-        keyIndexes[iss] = nextIndex;
+        OIDCKeys[issHash][nextIndex] = key;
+        keyIndexes[issHash] = nextIndex;
     }
 
-    function getLatestKey(bytes32 iss) public view returns (bytes32) {
-        return OIDCKeys[iss][keyIndexes[iss]];
+    function getLatestKey(bytes32 issHash) public view returns (bytes32) {
+        return OIDCKeys[issHash][keyIndexes[issHash]];
     }
 
     function _authorizeUpgrade(

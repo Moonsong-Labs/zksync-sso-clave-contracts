@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract OidcKeyRegistry is UUPSUpgradeable, OwnableUpgradeable {
+contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
     uint8 public constant MAX_KEYS = 5;
 
     // keccak256(iss) => keys
@@ -12,9 +12,12 @@ contract OidcKeyRegistry is UUPSUpgradeable, OwnableUpgradeable {
     // keccak256(iss) => index
     mapping(bytes32 => uint8) public keyIndexes;
 
+    constructor () {
+        initialize();
+    }
+
     function initialize() public initializer {
         __Ownable_init();
-        __UUPSUpgradeable_init();
     }
 
     function hashIssuer(string memory iss) public pure returns (bytes32) {
@@ -31,8 +34,4 @@ contract OidcKeyRegistry is UUPSUpgradeable, OwnableUpgradeable {
     function getLatestKey(bytes32 issHash) public view returns (bytes32) {
         return OIDCKeys[issHash][keyIndexes[issHash]];
     }
-
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
 }

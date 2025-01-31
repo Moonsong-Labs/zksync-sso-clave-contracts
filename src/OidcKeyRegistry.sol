@@ -5,48 +5,62 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
-    uint8 public constant MAX_KEYS = 5;
+  uint8 public constant MAX_KEYS = 5;
 
-    // keccak256(iss) => keys
-    mapping(bytes32 => bytes32[MAX_KEYS]) public OIDCKeys;
-    // keccak256(iss) => index
-    mapping(bytes32 => uint8) public keyIndexes;
+  struct Key {
+    string n; // RSA modulus
+    string e; // RSA exponent
+  }
 
-    constructor () {
-        initialize();
+  mapping(bytes32 => Key[MAX_KEYS]) public OIDCKeys; // Stores up to MAX_KEYS per issuer
+  mapping(bytes32 => uint8) public keyIndexes; // Tracks the latest key index for each issuer
+
+  constructor() {
+    initialize();
+  }
+
+  function initialize() public initializer {
+    __Ownable_init();
+  }
+
+  function hashIssuer(string memory iss) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(iss));
+  }
+
+  function setKey(bytes32 issHash, Key memory key) public onlyOwner {
+    uint8 index = keyIndexes[issHash];
+    uint8 nextIndex = (index + 1) % MAX_KEYS; // Circular buffer
+    OIDCKeys[issHash][nextIndex] = key;
+    keyIndexes[issHash] = nextIndex;
+  }
+
+  function setKeys(bytes32 issHash, Key[] memory keys) public onlyOwner {
+    for (uint8 i = 0; i < keys.length; i++) {
+      setKey(issHash, keys[i]);
+    }
+  }
+
+  function getLatestKey(bytes32 issHash) public view returns (Key memory) {
+    return OIDCKeys[issHash][keyIndexes[issHash]];
+  }
+
+  function isValidKey(bytes32 issHash, Key memory key) public view returns (bool) {
+    Key[MAX_KEYS] storage keys = OIDCKeys[issHash];
+
+    bytes32 keyNHash = keccak256(abi.encodePacked(key.n));
+    bytes32 keyEHash = keccak256(abi.encodePacked(key.e));
+
+    for (uint8 i = 0; i < MAX_KEYS; i++) {
+      Key storage storedKey = keys[i];
+
+      if (
+        keccak256(abi.encodePacked(storedKey.n)) == keyNHash && 
+        keccak256(abi.encodePacked(storedKey.e)) == keyEHash
+      ) {
+        return true;
+      }
     }
 
-    function initialize() public initializer {
-        __Ownable_init();
-    }
-
-    function hashIssuer(string memory iss) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(iss));
-    }
-
-    function setKey(bytes32 issHash, bytes32 key) public onlyOwner {
-        uint8 index = keyIndexes[issHash];
-        uint8 nextIndex = (index + 1) % MAX_KEYS;
-        OIDCKeys[issHash][nextIndex] = key;
-        keyIndexes[issHash] = nextIndex;
-    }
-
-    function setKeys(bytes32 issHash, bytes32[] memory keys) public onlyOwner {
-        for (uint8 i = 0; i < keys.length; i++) {
-            setKey(issHash, keys[i]);
-        }
-    }
-
-    function getLatestKey(bytes32 issHash) public view returns (bytes32) {
-        return OIDCKeys[issHash][keyIndexes[issHash]];
-    }
-
-    function isValidKey(bytes32 issHash, bytes32 key) public view returns (bool) {
-        for (uint8 i = 0; i < MAX_KEYS; i++) {
-            if (OIDCKeys[issHash][i] == key) {
-                return true;
-            }
-        }
-        return false;
-    }
+    return false;
+  }
 }

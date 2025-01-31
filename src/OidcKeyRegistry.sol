@@ -31,6 +31,12 @@ contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
         keyIndexes[issHash] = nextIndex;
     }
 
+    function setKeys(bytes32 issHash, bytes32[] memory keys) public onlyOwner {
+        for (uint8 i = 0; i < keys.length; i++) {
+            setKey(issHash, keys[i]);
+        }
+    }
+
     function getLatestKey(bytes32 issHash) public view returns (bytes32) {
         return OIDCKeys[issHash][keyIndexes[issHash]];
     }

@@ -42,21 +42,13 @@ contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
     }
   }
 
-  function getLatestKey(bytes32 issHash) public view returns (Key memory) {
-    return OIDCKeys[issHash][keyIndexes[issHash]];
-  }
-
-  function isValidKey(bytes32 issHash, Key memory key) public view returns (bool) {
+  function getKey(bytes32 issHash, bytes32 kid) public view returns (Key memory) {
     Key[MAX_KEYS] storage keys = OIDCKeys[issHash];
-
     for (uint8 i = 0; i < MAX_KEYS; i++) {
-      Key storage storedKey = keys[i];
-
-      if (storedKey.kid == key.kid) {
-        return true;
+      if (keys[i].kid == kid) {
+        return keys[i];
       }
     }
-
-    return false;
+    revert("Key not found");
   }
 }

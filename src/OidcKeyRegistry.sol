@@ -13,6 +13,7 @@ contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
     bytes e; // RSA exponent
   }
 
+  // Mapping uses keccak256(iss) as the key
   mapping(bytes32 => Key[MAX_KEYS]) public OIDCKeys; // Stores up to MAX_KEYS per issuer
   mapping(bytes32 => uint8) public keyIndexes; // Tracks the latest key index for each issuer
 

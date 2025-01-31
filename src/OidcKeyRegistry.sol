@@ -8,8 +8,9 @@ contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
   uint8 public constant MAX_KEYS = 5;
 
   struct Key {
-    string n; // RSA modulus
-    string e; // RSA exponent
+    bytes32 kid; // Key ID
+    bytes n; // RSA modulus
+    bytes e; // RSA exponent
   }
 
   mapping(bytes32 => Key[MAX_KEYS]) public OIDCKeys; // Stores up to MAX_KEYS per issuer
@@ -47,16 +48,10 @@ contract OidcKeyRegistry is Initializable, OwnableUpgradeable {
   function isValidKey(bytes32 issHash, Key memory key) public view returns (bool) {
     Key[MAX_KEYS] storage keys = OIDCKeys[issHash];
 
-    bytes32 keyNHash = keccak256(abi.encodePacked(key.n));
-    bytes32 keyEHash = keccak256(abi.encodePacked(key.e));
-
     for (uint8 i = 0; i < MAX_KEYS; i++) {
       Key storage storedKey = keys[i];
 
-      if (
-        keccak256(abi.encodePacked(storedKey.n)) == keyNHash && 
-        keccak256(abi.encodePacked(storedKey.e)) == keyEHash
-      ) {
+      if (storedKey.kid == key.kid) {
         return true;
       }
     }
